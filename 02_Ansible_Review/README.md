@@ -91,3 +91,48 @@ ok: [localhost] => {
 ```
 
 You should observe that the output remains the same.
+
+## Using variables inside of Ansible Roles
+
+Ansible Roles are great because they allow a developer to declare all variables along with defaults ahead of time to ensure idempotence regardless of how the role is executed. As a simple example, let's declare a variable `message` which we will print out on execution of our Role. Lets declare a default message by editing `example-role/defaults/main.yml`:
+```yaml
+---
+message: "The spice must flow"
+```
+
+Now modify `example-role/tasks/main.yml` to print out our message using a `debug` task:
+```yaml
+- debug:
+    msg: "System {{ inventory_hostname }} has uuid {{ ansible_product_uuid }}"
+- debug:
+    msg: "{{ message }}"
+```
+
+Run the playbook:
+```bash
+$ ansible-playbook playbook.yaml
+---- (omitted output) ----
+TASK [debug] ****************************
+ok: [localhost] => {
+    "msg": "System localhost has uuid NA"
+}
+
+ok: [localhost] => {
+    "msg": "The spice must flow"
+}
+```
+
+We can overwrite the default message by passing along `message` as an extra var when launching the playbook:
+```bash
+$ ansible-playbook playbook.yaml -e "message=\"This is an altered message\""
+---- (omitted output) ----
+TASK [debug] ****************************
+ok: [localhost] => {
+    "msg": "System localhost has uuid NA"
+}
+
+ok: [localhost] => {
+    "msg": "This is an altered message"
+}
+```
+
