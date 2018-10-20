@@ -1,7 +1,12 @@
 # Operator SDK Integration with Ansible Operator
 
-**Note**: This guide uses [minikube][minikube_tool] version v0.25.0+ as the
-local kubernetes cluster and quay.io for the public registry.
+**Note**: A portion of this guide uses [minikube][minikube_tool] version
+v0.25.0+ as the local kubernetes cluster and quay.io for the public registry.
+
+Ansible Operator development and testing is fully supported as a first-class
+citizen within the Operator SDK. Operator SDK can be used to create new
+Operator projects, test existing Operator projects, build Operator images, and
+generate new Custom Resource Definitions for an Operator.
 
 ## Install the Operator SDK CLI
 
@@ -22,139 +27,39 @@ $ make install
 
 This installs the CLI binary `operator-sdk` at `$GOPATH/bin`.
 
-## Create a new project
+## Creating a new Operator
 
-Use the CLI to create a new Ansible-based memcached-operator project:
+Use the CLI to create a new Ansible-based Operator project with the `new`
+command. `operator-sdk new --type ansible` has two required flags
+`--api-version` and `--kind`. These flags are used to generate proper Custom
+Resource files and an Ansible Role which name matches the input for `--kind`.
+An example of this command is:
 
 ```sh
 $ operator-sdk new memcached-operator --api-version=cache.example.com/v1alpha1 --kind=Memcached --type=ansible
 $ cd memcached-operator
 ```
 
-This creates the memcached-operator project specifically for watching the
+This creates a new memcached-operator project specifically for watching the
 Memcached resource with APIVersion `cache.example.com/v1apha1` and Kind
 `Memcached`.
 
-To learn more about the project directory structure, see [project
-layout][layout_doc] doc.
+### Project Scaffolding Layout
 
-## Customize the operator logic
+After creating a new operator project using `operator-sdk new --type ansible`,
+the project directory has numerous generated folders and files. The following
+table describes a basic rundown of each generated file/directory.
 
-For this example the memcached-operator will execute the following
-reconciliation logic for each `Memcached` Custom Resource (CR):
-- Create a memcached Deployment if it doesn't exist
-- Ensure that the Deployment size is the same as specified by the `Memcached`
-CR
 
-### Watch the Memcached CR
+| File/Folders   | Purpose                           |
+| :---           | :--- |
+| deploy | Contains a generic set of kubernetes manifests for deploying this operator on a kubernetes cluster. |
+| roles/<kind> | Contains an Ansible Role initialized using [Ansible Galaxy](https://docs.ansible.com/ansible/latest/reference_appendices/galaxy.html) |
+| build | Contains scripts that the operator-sdk uses for build and initialization. |
+| watches.yaml | Contains Group, Version, Kind, and Ansible invocation method. |
 
-By default, the memcached-operator watches `Memcached` resource events as shown
-in `watches.yaml` and executes Ansible Role `Memached`:
 
-```yaml
----
-- version: v1alpha1
-  group: cache.example.com
-  kind: Memcached
-```
-
-#### Options
-**Role**
-Specifying a `role` option in `watches.yaml` will configure the operator to use
-this specified path when launching `ansible-runner` with an Ansible Role. By
-default, the `new` command will fill in an absolute path to where your role
-should go.
-```yaml
----
-- version: v1alpha1
-  group: cache.example.com
-  kind: Memcached
-  role: /opt/ansible/roles/Memcached
-```
-
-**Playbook**
-Specifying a `playbook` option in `watches.yaml` will configure the operator to
-use this specified path when launching `ansible-runner` with an Ansible
-Playbook
-```yaml
----
-- version: v1alpha1
-  group: cache.example.com
-  kind: Memcached
-  playbook: /opt/ansible/playbook.yaml
-```
-
-## Building the Memcached Ansible Role
-
-The first thing to do is to modify the generated Ansible role under
-`roles/Memcached`. This Ansible Role controls the logic that is executed when a
-resource is modified.
-
-### Define the Memcached spec
-
-Defining the spec for an Ansible Operator can be done entirely in Ansible. The
-Ansible Operator will simply pass all key value pairs listed in the Custom
-Resource spec field along to Ansible as
-[variables](https://docs.ansible.com/ansible/2.5/user_guide/playbooks_variables.html#passing-variables-on-the-command-line).
-It is recommended that you perform some type validation in Ansible on the
-variables to ensure that your application is receiving expected input.
-
-First, set a default in case the user doesn't set the `spec` field by modifying
-`roles/Memcached/defaults/main.yml`:
-```yaml
-size: 1
-```
-
-### Defining the Memcached deployment
-
-Now that we have the spec defined, we can define what Ansible is actually
-executed on resource changes. Since this is an Ansible Role, the default
-behavior will be to execute the tasks in `roles/Memcached/tasks/main.yml`. We
-want Ansible to create a deployment if it does not exist which runs the
-`memcached:1.4.36-alpine` image. Ansible 2.5+ supports the [k8s Ansible
-Module](https://docs.ansible.com/ansible/2.6/modules/k8s_module.html) which we
-will leverage to control the deployment definition.
-
-Modify `roles/Memcached/tasks/main.yml` to look like the following:
-```yaml
----
-- name: start memcached
-  k8s:
-    definition:
-      kind: Deployment
-      apiVersion: apps/v1
-      metadata:
-        name: '{{ meta.name }}-memcached'
-        namespace: '{{ meta.namespace }}'
-      spec:
-        replicas: "{{size}}"
-        selector:
-          matchLabels:
-            app: memcached
-        template:
-          metadata:
-            labels:
-              app: memcached
-          spec:
-            containers:
-            - name: memcached
-              command:
-              - memcached
-              - -m=64
-              - -o
-              - modern
-              - -v
-              image: "docker.io/memcached:1.4.36-alpine"
-              ports:
-                - containerPort: 11211
-
-```
-
-It is important to note that we used the `size` variable to control how many
-replicas of the Memcached deployment we want. We set the default to `1`, but
-any user can create a Custom Resource that overwrites the default.
-
-### Build and run the operator
+## Build and run the operator
 
 Before running the operator, Kubernetes needs to know about the new custom
 resource definition the operator will be watching.
@@ -170,7 +75,7 @@ Once this is done, there are two ways to run the operator:
 - As a pod inside a Kubernetes cluster
 - As a go program outside the cluster using `operator-sdk`
 
-#### 1. Run as a pod inside a Kubernetes cluster
+### 1. Run as a pod inside a Kubernetes cluster
 
 Running as a pod inside a Kubernetes cluster is preferred for production use.
 
@@ -208,7 +113,7 @@ NAME                     DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
 memcached-operator       1         1         1            1           1m
 ```
 
-#### 2. Run outside the cluster
+### 2. Run outside the cluster
 
 This method is preferred during the development cycle to speed up deployment and testing.
 
@@ -240,87 +145,6 @@ INFO[0000] Go OS/Arch: darwin/amd64
 INFO[0000] operator-sdk Version: 0.0.5+git
 ```
 
-### Create a Memcached CR
-
-Modify `deploy/cr.yaml` as shown and create a `Memcached` custom resource:
-
-```sh
-$ cat deploy/cr.yaml
-apiVersion: "cache.example.com/v1alpha1"
-kind: "Memcached"
-metadata:
-  name: "example-memcached"
-spec:
-  size: 3
-
-$ kubectl apply -f deploy/crds/cache_v1alpha1_memcached_cr.yaml
-```
-
-Ensure that the memcached-operator creates the deployment for the CR:
-
-```sh
-$ kubectl get deployment
-NAME                     DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
-memcached-operator       1         1         1            1           2m
-example-memcached        3         3         3            3           1m
-```
-
-Check the pods to confirm 3 replicas were created:
-
-```sh
-$ kubectl get pods
-NAME                                  READY     STATUS    RESTARTS   AGE
-example-memcached-6fd7c98d8-7dqdr     1/1       Running   0          1m
-example-memcached-6fd7c98d8-g5k7v     1/1       Running   0          1m
-example-memcached-6fd7c98d8-m7vn7     1/1       Running   0          1m
-memcached-operator-7cc7cfdf86-vvjqk   1/1       Running   0          2m
-```
-
-### Update the size
-
-Change the `spec.size` field in the memcached CR from 3 to 4 and apply the
-change:
-
-```sh
-$ cat deploy/cr.yaml
-apiVersion: "cache.example.com/v1alpha1"
-kind: "Memcached"
-metadata:
-  name: "example-memcached"
-spec:
-  size: 4
-
-$ kubectl apply -f deploy/crds/cache_v1alpha1_memcached_cr.yaml
-```
-
-Confirm that the operator changes the deployment size:
-
-```sh
-$ kubectl get deployment
-NAME                 DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
-example-memcached    4         4         4            4           5m
-```
-
-### Cleanup
-
-Clean up the resources:
-
-```sh
-$ kubectl delete -f deploy/crds/cache_v1alpha1_memcached_cr.yaml
-$ kubectl delete -f deploy/operator.yaml
-$ kubectl delete -f deploy/role_binding.yaml
-$ kubectl delete -f deploy/role.yaml
-$ kubectl delete -f deploy/service_account.yaml
-$ kubectl delete -f deploy/crds/cache_v1alpha1_memcached_cr.yaml
-```
-
-[layout_doc]:./project_layout.md
-[dep_tool]:https://golang.github.io/dep/docs/installation.html
-[git_tool]:https://git-scm.com/downloads
-[go_tool]:https://golang.org/dl/
-[docker_tool]:https://docs.docker.com/install/
-[kubectl_tool]:https://kubernetes.io/docs/tasks/tools/install-kubectl/
 [minikube_tool]:https://github.com/kubernetes/minikube#installation
-[ansible_tool]:https://docs.ansible.com/ansible/latest/index.html
 [ansible_runner_tool]:https://ansible-runner.readthedocs.io/en/latest/install.html
 [ansible_runner_http_plugin]:https://github.com/ansible/ansible-runner-http

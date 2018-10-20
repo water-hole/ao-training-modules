@@ -1,16 +1,25 @@
 # Ansible Operator Overview
 
-## Using Ansible inside of an Operator
-Now that we have demonstrated using the k8s modules inside of Ansible, we want
-to trigger this Ansible logic when a custom resource changes. In the above
-example, we want to map a role to a specific Kubernetes resource that the
-operator will watch. This is called the Watches file.
+The reader is expected to have a basic understanding of the Operator pattern.
+Ansible Operator is an Operator which is powered by Ansible. Custom resource
+events trigger Ansible tasks as opposed to the traditional approach of handling
+these events with Go code.
 
-### Watches file
+## Using Ansible inside of an Operator
+
+Now that we have demonstrated using the k8s modules inside of Ansible, we want
+to trigger this Ansible logic when a custom resource changes. It is incredibly
+important that the roles/playbooks which are executed are deemed idempotent by
+the developer as these tasks will be executed frequently to ensure the
+application is in its proper state. The Ansible Operator uses a YaML file
+called `watches.yaml`, or the Watches file, which holds the mapping between
+custom resources and Ansible Roles/Playbooks.
+
+## Watches file
 
 The Operator expects a mapping file, which lists each GVK to watch and the
 corresponding path to an Ansible role or playbook, to be copied into the
-container at a predefined location: /opt/ansible/watches.yaml
+container at a predefined location: `/opt/ansible/watches.yaml`
 
 Dockerfile example:
 ```Dockerfile
@@ -45,7 +54,18 @@ Example specifying a role:
   role: /opt/ansible/roles/Foo
 ```
 
-#### Using playbooks in watches.yaml
+Example specifying a playbook:
+
+```yaml
+---
+- version: v1alpha1
+  group: foo.example.com
+  kind: Foo
+  role: /opt/ansible/playbook.yml
+```
+
+
+### Using playbooks in watches.yaml
 
 By default, `operator-sdk new --type ansible` sets `watches.yaml` to execute a
 role directly on a resource event. This works well for new projects, but with a
@@ -79,7 +99,7 @@ developer can also do:
 $ operator-sdk new --type ansible --kind Foo --api-version foo.example.com/v1alpha1 foo-operator --generate-playbook
 ```
 
-### Custom Resource file
+## Custom Resource file
 
 The Custom Resource file format is Kubernetes resource file. The object has
 mandatory fields:
@@ -96,7 +116,7 @@ This field is optional and will be empty by default.
 **annotations**: Kubernetes specific annotations to be appened to the CR. See
 the below section for Ansible Operator specifc annotations.
 
-#### Ansible Operator annotations
+### Ansible Operator annotations
 This is the list of CR annotations which will modify the behavior of the operator:
 
 **ansible.operator-sdk/reconcile-period**: Used to specify the reconciliation
@@ -114,140 +134,10 @@ annotations:
   ansible.operator-sdk/reconcile-period: "30s"
 ```
 
-### Testing an Ansible operator locally
-
-Once a developer is comfortable working with the above workflow, it will be
-beneficial to test the logic inside of an operator. To accomplish this, we can
-use `operator-sdk up local` from the top-level directory of our project. The
-`up local` command reads from `./watches.yaml` and uses `~/.kube/config` to
-communicate with a kubernetes cluster just as the `k8s` modules do. This
-section assumes the developer has read the [Ansible Operator user
-guide][ansible_operator_user_guide] and has the proper dependencies installed.
-
-Since `up local` reads from `./watches.yaml`, there are a couple options
-available to the developer. If `role` is left alone (by default
-`/opt/ansible/roles/<name>`) the developer must copy the role over to
-`/opt/ansible/roles` from the operator directly. This is cumbersome because
-changes will not be reflected from the current directory. It is recommended
-that the developer instead change the `role` field to point to the current
-directory and simply comment out the existing line:
-```yaml
-- version: v1alpha1
-  group: foo.example.com
-  kind: Foo
-  #  role: /opt/ansible/roles/Foo
-  role: /home/user/foo-operator/Foo
-```
-
-Create a Custom Resource Definiton (CRD) and proper Role-Based Access Control
-(RBAC) defitinions for resource Foo. `operator-sdk` autogenerates these files
-inside of the `deploy` folder:
-```bash
-$ kubectl create -f deploy/crd.yaml
-$ kubectl create -f deploy/rbac.yaml
-```
-
-Run the `up local` command:
-```bash
-$ operator-sdk up local
-INFO[0000] Go Version: go1.10.3                         
-INFO[0000] Go OS/Arch: linux/amd64                      
-INFO[0000] operator-sdk Version: 0.0.6+git              
-INFO[0000] Starting to serve on 127.0.0.1:8888
-         
-INFO[0000] Watching foo.example.com/v1alpha1, Foo, default 
-```
-
-Now that the operator is watching resource `Foo` for events, the creation of a
-Custom Resource will trigger our Ansible Role to be executed. Take a look at
-`deploy/cr.yaml`:
-```yaml
-apiVersion: "foo.example.com/v1alpha1"
-kind: "Foo"
-metadata:
-  name: "example"
-```
-
-Since `spec` is not set, Ansible is invoked with no extra variables. The next
-section covers how extra variables are passed from a Custom Resource to
-Ansible. This is why it is important to set sane defaults for the operator.
-
-Create a Custom Resource instance of Foo with default var `state` set to
-`present`:
-```bash
-$ kubectl create -f deploy/cr.yaml
-```
-
-Check that namespace `test` was created:
-```bash
-$ kubectl get namespace
-NAME          STATUS    AGE
-default       Active    28d
-kube-public   Active    28d
-kube-system   Active    28d
-test          Active    3s
-```
-
-Modify `deploy/cr.yaml` to set `state` to `absent`:
-```yaml
-apiVersion: "foo.example.com/v1alpha1"
-kind: "Foo"
-metadata:
-  name: "example"
-spec:
-  state: "absent"
-```
-
-Apply the changes to Kubernetes and confirm that the namespace is deleted:
-```bash
-$ kubectl apply -f deploy/cr.yaml
-$ kubectl get namespace
-NAME          STATUS    AGE
-default       Active    28d
-kube-public   Active    28d
-kube-system   Active    28d
-```
-
-### Testing an Ansible operator on a cluster
-
-Now that a developer is confident in the operator logic, testing the operator
-inside of a pod on a Kubernetes cluster is desired. Running as a pod inside a
-Kubernetes cluster is preferred for production use.
-
-To build the `foo-operator` image and push it to a registry:
-```
-$ operator-sdk build quay.io/example/foo-operator:v0.0.1
-$ docker push quay.io/example/foo-operator:v0.0.1
-```
-
-Kubernetes deployment manifests are generated in `deploy/operator.yaml`. The
-deployment image in this file needs to be modified from the placeholder
-`REPLACE_IMAGE` to the previous built image. To do this run:
-```
-$ sed -i 's|REPLACE_IMAGE|quay.io/example/foo-operator:v0.0.1|g' deploy/operator.yaml
-```
-
-Deploy the foo-operator:
-
-```sh
-$ kubectl create -f deploy/rbac.yaml
-$ kubectl create -f deploy/operator.yaml
-```
-
-**NOTE**: `deploy/rbac.yaml` creates a `ClusterRoleBinding` and assumes we are
-working in namespace `default`. If you are working in a different namespace you
-must modify this file before creating it.
-
-Verify that the foo-operator is up and running:
-
-```sh
-$ kubectl get deployment
-NAME                     DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
-foo-operator       1         1         1            1           1m
-```
-
-## Extra vars sent to Ansible
-The extravars that are sent to Ansible are predefined and managed by the operator. The `spec` section will pass along the key-value pairs as extra vars. This is equivalent to how above extra vars are passed in to `ansible-playbook`.
+## How Ansible Operator manages Extra Vars
+The extravars that are sent to Ansible are predefined and managed by the
+operator. The `spec` section will pass along the key-value pairs as extra vars.
+This is equivalent to how above extra vars are passed in to `ansible-playbook`.
 
 For the CR example:
 ```yaml
