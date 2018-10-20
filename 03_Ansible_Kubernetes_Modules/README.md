@@ -105,5 +105,8 @@ kube-public   Active    28d
 kube-system   Active    28d
 ```
 
+## Leveraging existing Kubernetes Resource Files inside of Ansible
+** PLACEHOLDER SO I DON'T FORGET TO DO THIS **
+
 [k8s_ansible_module]:https://docs.ansible.com/ansible/2.6/modules/k8s_module.html
 [openshift_restclient_python]:https://github.com/openshift/openshift-restclient-python
