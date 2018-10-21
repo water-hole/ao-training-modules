@@ -106,7 +106,47 @@ kube-system   Active    28d
 ```
 
 ## Leveraging existing Kubernetes Resource Files inside of Ansible
-** PLACEHOLDER SO I DON'T FORGET TO DO THIS **
+
+It may be easier to leverage existing Kubernetes Resource files to get started.
+Take the [nginx deployment
+example](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#creating-a-deployment)
+available in the Kubernetes docs. Starting with a clean Ansible Role
+`example-role`, copy `nginx-deployment.yaml` into `example-role/files`:
+```bash
+$ cat example-role/files/nginx-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.15.4
+        ports:
+        - containerPort: 80
+```
+Modify `example-role/tasks/main.yml`:
+```yaml
+---
+- k8s:
+    state: present
+    definition: "{{ lookup('file', 'nginx-deployment.yaml') }}"
+    namespace: default
+```
+
+Run the playbook and observe 3 nginx replicas created from the above
+deployment.
 
 [k8s_ansible_module]:https://docs.ansible.com/ansible/2.6/modules/k8s_module.html
 [openshift_restclient_python]:https://github.com/openshift/openshift-restclient-python

@@ -55,4 +55,3 @@ $ make install
 ```
 
 This installs the CLI binary `operator-sdk` at `$GOPATH/bin`.
-
