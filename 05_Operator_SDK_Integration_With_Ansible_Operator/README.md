@@ -8,25 +8,6 @@ citizen within the Operator SDK. Operator SDK can be used to create new
 Operator projects, test existing Operator projects, build Operator images, and
 generate new Custom Resource Definitions for an Operator.
 
-## Install the Operator SDK CLI
-
-The Operator SDK has a CLI tool that helps the developer to create, build, and
-deploy a new operator project.
-
-Checkout the desired release tag and install the SDK CLI tool:
-
-```sh
-$ mkdir -p $GOPATH/src/github.com/operator-framework
-$ cd $GOPATH/src/github.com/operator-framework
-$ git clone https://github.com/operator-framework/operator-sdk
-$ cd operator-sdk
-$ git checkout master
-$ make dep
-$ make install
-```
-
-This installs the CLI binary `operator-sdk` at `$GOPATH/bin`.
-
 ## Creating a new Operator
 
 Use the CLI to create a new Ansible-based Operator project with the `new`

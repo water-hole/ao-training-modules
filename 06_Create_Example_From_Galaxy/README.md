@@ -1,30 +1,16 @@
-# Creating Example leveraging exiting content from Ansible Galaxy
+# Creating Example leveraging existing content from Ansible Galaxy
 
-**Note**: This guide uses [minikube][minikube_tool] version v0.25.0+ as the
-local kubernetes cluster and quay.io for the public registry.
+**Note**: This guide assumes [minikube][minikube_tool] has been installed and
+is running a local kubernetes cluster. Guide also assumes access to quay.io for
+publishing images to a registry.
 
-## Install the Operator SDK CLI
-
-The Operator SDK has a CLI tool that helps the developer to create, build, and
-deploy a new operator project.
-
-Checkout the desired release tag and install the SDK CLI tool:
-
-```sh
-$ mkdir -p $GOPATH/src/github.com/operator-framework
-$ cd $GOPATH/src/github.com/operator-framework
-$ git clone https://github.com/operator-framework/operator-sdk
-$ cd operator-sdk
-$ git checkout master
-$ make dep
-$ make install
-```
-
-This installs the CLI binary `operator-sdk` at `$GOPATH/bin`.
+This module will show the reader how to create a Memcached Operator by either
+installing the Ansible Role from Ansible Galaxy or developing it from scratch.
 
 ## Create a new project
 
-Use the CLI to create a new Ansible-based memcached-operator project:
+To get started, use the CLI to create a new Ansible-based memcached-operator
+project:
 
 ```sh
 $ operator-sdk new memcached-operator --api-version=cache.example.com/v1alpha1 --kind=Memcached --type=ansible
@@ -44,45 +30,56 @@ reconciliation logic for each `Memcached` Custom Resource (CR):
 - Ensure that the Deployment size is the same as specified by the `Memcached`
 CR
 
-### Watch the Memcached CR
+## Installing an existing role from Ansible Galaxy
+
+To speed things up, we can reuse a role that has been written inside of our
+operator. The role we will use is
+[dymurray.memcached_operator_role][memcached_galaxy]. The section below will
+also show the reader how to create that Ansible Role from scratch. To get
+started, install the Ansible Role inside of the project:
+```bash
+$ ansible-galaxy install dymurray.memcached_operator_role -p ./roles
+$ ls roles/
+dymurray.memcached_operator_role Memcached
+$ rm -rf ./roles/Memcached # Delete generated scaffolding role
+```
+
+This role provides the user with a variable `size` which is an integer to
+control the number of replicas to create. You can find the default for this
+variable in `roles/dymurray.memcached_operator_role/defaults/main.yml`:
+```bash
+$ cat roles/dymurray.memcached_operator_role/defaults/main.yml
+---
+# defaults file for Memcached
+size: 1
+```
+
+The reader can also take note of the tasks file which uses the Kubernetes
+Ansible module to create a deployment of memcached if it does not exist. Again,
+see below for a deep dive into each portion of the role.
+
+It is important that we modify the necessary files to ensure that our operator
+is using this role instead of the generated scaffolding role. First, lets
+modify `watches.yaml`.
+
+### Watches File
 
 By default, the memcached-operator watches `Memcached` resource events as shown
-in `watches.yaml` and executes Ansible Role `Memached`:
+in `watches.yaml` and executes Ansible Role `Memached`. Since we have changed
+this role, lets change it to:
 
 ```yaml
 ---
 - version: v1alpha1
   group: cache.example.com
   kind: Memcached
+  role: /opt/ansible/roles/dymurray.memcached_operator_role
 ```
 
-#### Options
-**Role**
-Specifying a `role` option in `watches.yaml` will configure the operator to use
-this specified path when launching `ansible-runner` with an Ansible Role. By
-default, the `new` command will fill in an absolute path to where your role
-should go.
-```yaml
----
-- version: v1alpha1
-  group: cache.example.com
-  kind: Memcached
-  role: /opt/ansible/roles/Memcached
-```
+## Building the Memcached Ansible Role from scratch
 
-**Playbook**
-Specifying a `playbook` option in `watches.yaml` will configure the operator to
-use this specified path when launching `ansible-runner` with an Ansible
-Playbook
-```yaml
----
-- version: v1alpha1
-  group: cache.example.com
-  kind: Memcached
-  playbook: /opt/ansible/playbook.yaml
-```
-
-## Building the Memcached Ansible Role
+The below guide is how to create
+[dymurray.memcached_operator_role][memcached_galaxy] from scratch.
 
 The first thing to do is to modify the generated Ansible role under
 `roles/Memcached`. This Ansible Role controls the logic that is executed when a
@@ -152,7 +149,7 @@ It is important to note that we used the `size` variable to control how many
 replicas of the Memcached deployment we want. We set the default to `1`, but
 any user can create a Custom Resource that overwrites the default.
 
-### Build and run the operator
+## Build and run the operator
 
 Before running the operator, Kubernetes needs to know about the new custom
 resource definition the operator will be watching.
@@ -168,7 +165,7 @@ Once this is done, there are two ways to run the operator:
 - As a pod inside a Kubernetes cluster
 - As a go program outside the cluster using `operator-sdk`
 
-#### 1. Run as a pod inside a Kubernetes cluster
+### 1. Run as a pod inside a Kubernetes cluster
 
 Running as a pod inside a Kubernetes cluster is preferred for production use.
 
@@ -206,7 +203,7 @@ NAME                     DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
 memcached-operator       1         1         1            1           1m
 ```
 
-#### 2. Run outside the cluster
+### 2. Run outside the cluster
 
 This method is preferred during the development cycle to speed up deployment and testing.
 
@@ -238,7 +235,7 @@ INFO[0000] Go OS/Arch: darwin/amd64
 INFO[0000] operator-sdk Version: 0.0.5+git
 ```
 
-### Create a Memcached CR
+## Create a Memcached CR
 
 Modify `deploy/cr.yaml` as shown and create a `Memcached` custom resource:
 
@@ -274,7 +271,7 @@ example-memcached-6fd7c98d8-m7vn7     1/1       Running   0          1m
 memcached-operator-7cc7cfdf86-vvjqk   1/1       Running   0          2m
 ```
 
-### Update the size
+## Update the size
 
 Change the `spec.size` field in the memcached CR from 3 to 4 and apply the
 change:
@@ -315,3 +312,4 @@ $ kubectl delete -f deploy/crds/cache_v1alpha1_memcached_cr.yaml
 [minikube_tool]:https://github.com/kubernetes/minikube#installation
 [ansible_runner_tool]:https://ansible-runner.readthedocs.io/en/latest/install.html
 [ansible_runner_http_plugin]:https://github.com/ansible/ansible-runner-http
+[memcached_galaxy]:https://galaxy.ansible.com/dymurray/memcached_operator_role
