@@ -1,21 +1,18 @@
 # Basic Overview of Ansible
 
+## Goals
+
+By the end of this section, you will understand:
+- What is an Ansible Playbook
+- What is an Ansible Role
+- How to run Ansible
+- How to use variables in an Ansible Role
+
 ## First Commands
 
-Edit (or create) `/etc/ansible/hosts` and put one or more remote systems in it. Use `localhost` as a starting point:
+Edit (or create) `/etc/ansible/hosts` and put one or more systems in it. Use `localhost` as a starting point:
 ```
-localhost
-```
-
-This is the inventory file which describes the list of hosts that Ansible will interact with. In order for Ansible to connect to this host, we must enable passwordless SSH. To do this, ensure that your public SSH key is in `~/.ssh/authorized_keys`. If it is not, add it:
-```bash
-$ cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
-```
-
-To enable passwordless SSH:
-```bash
-$ ssh-agent bash
-$ ssh-add ~/.ssh/id_rsa
+localhost ansible_connection=local
 ```
 
 Now test that Ansible is properly configured:
@@ -55,7 +52,9 @@ At a basic level, Playbooks can be used to manage configurations and deployments
 
 ## Creating an Ansible Role
 
-Ansible Roles are a way of automatically loading certain vars_files, tasks, and handlers based on a known file structure. Grouping content by roles also allows easy sharing of roles with others. Roles are far more consumable than playbooks.
+Ansible Roles are a way of grouping related tasks and other data together in a
+known file structure. Grouping content by roles allows it to easily be shared
+with others. Roles are easier to reuse than playbooks.
 
 Now that we have seen how tasks are executed inside of playbooks, let's move the same logic inside of an Ansible Role. Begin by creating a new role using `ansible-galaxy`:
 ```
@@ -94,7 +93,11 @@ You should observe that the output remains the same.
 
 ## Using variables inside of Ansible Roles
 
-Ansible Roles are great because they allow a developer to declare all variables along with defaults ahead of time to ensure idempotence regardless of how the role is executed. As a simple example, let's declare a variable `message` which we will print out on execution of our Role. Lets declare a default message by editing `example-role/defaults/main.yml`:
+Ansible Roles are great because they allow a developer to declare all variables
+along with defaults ahead of time to ensure idempotence regardless of how the
+role is executed. As a simple example, let's declare a variable `message` which
+we will print out during execution of our Role. Let's declare a default message
+by editing `example-role/defaults/main.yml`:
 ```yaml
 ---
 message: "The spice must flow"
@@ -124,7 +127,7 @@ ok: [localhost] => {
 
 We can overwrite the default message by passing along `message` as an extra var when launching the playbook:
 ```bash
-$ ansible-playbook playbook.yaml -e "message=\"This is an altered message\""
+$ ansible-playbook playbook.yaml -e 'message="This is an altered message"'
 ---- (omitted output) ----
 TASK [debug] ****************************
 ok: [localhost] => {
