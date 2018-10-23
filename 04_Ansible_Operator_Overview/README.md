@@ -172,6 +172,8 @@ The structure is:
     msg: "name: {{ meta.name }}, {{ meta.namespace }}"
 ```
 
+**Note:** The resulting JSON structure that is passed in as extra vars are autoconverted to snake-case. `newParameter` becomes `new_parameter`.
+
 [ansible_operator_user_guide]:../user-guide.md
 [time_pkg]:https://golang.org/pkg/time/
 [time_parse_duration]:https://golang.org/pkg/time/#ParseDuration
