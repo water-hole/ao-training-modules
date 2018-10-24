@@ -11,23 +11,6 @@ biggest benefits of using Ansible in conjunction with existing Kubernetes
 resource files is the ability to use Jinja templating so that you can customize
 deployments with the simplicity of a few variables in Ansible.
 
-The easiest way to get started is to install the modules on your local machine
-and test them using a playbook.
-
-### Installing the k8s Ansible modules
-
-To install the k8s Ansible modules, one must first install Ansible 2.6+. On
-Fedora/Centos:
-```bash
-$ sudo dnf install ansible
-```
-
-In addition to Ansible, a user must install the [Openshift Restclient
-Python][openshift_restclient_python] package. This can be installed from pip:
-```bash
-$ pip install openshift
-```
-
 ### Running the k8s Ansible modules locally
 
 Modify `example-role/tasks/main.yml` with desired Ansible logic. For this example
@@ -38,6 +21,7 @@ we will create and delete a namespace with the switch of a variable:
   k8s:
     api_version: v1
     kind: Namespace
+    name: test
     state: "{{ state }}"
   ignore_errors: true
 ```
@@ -80,7 +64,7 @@ test          Active    3s
 
 Rerun the playbook setting `state` to `absent`:
 ```bash
-$ ansible-playbook playbook.yml --extra-vars state=absent
+$ ansible-playbook playbook.yaml --extra-vars state=absent
  [WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
 
 
@@ -111,8 +95,17 @@ It may be easier to leverage existing Kubernetes Resource files to get started.
 Take the [nginx deployment
 example](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#creating-a-deployment)
 available in the Kubernetes docs. Starting with a clean Ansible Role
-`example-role`, copy `nginx-deployment.yaml` into `example-role/files`:
+`example-role`:
+
 ```bash
+$ rm -Rf example-role
+$ ansible-galaxy init example-role
+```
+
+Copy `nginx-deployment.yaml` into `example-role/files`:
+
+```bash
+$ curl https://raw.githubusercontent.com/kubernetes/website/master/content/en/examples/controllers/nginx-deployment.yaml -o example-role/files/nginx-deployment.yaml
 $ cat example-role/files/nginx-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -147,6 +140,27 @@ Modify `example-role/tasks/main.yml`:
 
 Run the playbook and observe 3 nginx replicas created from the above
 deployment.
+
+```bash
+$ ansible-playbook playbook.yaml
+
+PLAY [localhost] **************************************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] ********************************************************************************************************************************************************************************************
+ok: [localhost]
+
+TASK [example-role : k8s] *****************************************************************************************************************************************************************************************
+changed: [localhost]
+
+PLAY RECAP ********************************************************************************************************************************************************************************************************
+localhost                  : ok=2    changed=1    unreachable=0    failed=0
+
+$ kubectl get pods
+NAME                                  READY     STATUS              RESTARTS   AGE
+nginx-deployment-d7b764d88-8nvd9      0/1       ContainerCreating   0          13s
+nginx-deployment-d7b764d88-hvd27      0/1       ContainerCreating   0          13s
+nginx-deployment-d7b764d88-n4d7g      0/1       ContainerCreating   0          13s
+```
 
 [k8s_ansible_module]:https://docs.ansible.com/ansible/2.6/modules/k8s_module.html
 [openshift_restclient_python]:https://github.com/openshift/openshift-restclient-python
