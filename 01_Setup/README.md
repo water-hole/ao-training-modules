@@ -25,10 +25,9 @@ It is beneficial to install the dependencies in a virtual environment to avoid
 installing unneeded files on your local machine. To do this, ensure you have
 `virtualenv` installed and run:
 ```
-$ mkkdir ~/operatordev/<project>
+$ mkdir -p ~/operatordev/<project>
 $ virtualenv ~/operatordev/<project>
-$ cd ~/operatordev/<project>/bin
-$ source activate
+$ source ~/operatordev/foo/bin/activate
 $ pip install openshift ansible
 ```
 
@@ -39,8 +38,8 @@ $ pip install ansible-runner ansible-runner-http
 
 ## Install the Operator SDK CLI - PLACEHOLDER UNTIL WE HAVE SDK RELEASE
 
-The Operator SDK has a CLI tool that helps the developer to create, build, and
-deploy a new operator project.
+The Operator SDK has a CLI tool that helps you create, build, and deploy a new
+operator project.
 
 Checkout the desired release tag and install the SDK CLI tool:
 
