@@ -13,7 +13,7 @@ generate new Custom Resource Definitions for an Operator.
 Use the CLI to create a new Ansible-based Operator project with the `new`
 command. `operator-sdk new --type ansible` has two required flags
 `--api-version` and `--kind`. These flags are used to generate proper Custom
-Resource files and an Ansible Role which name matches the input for `--kind`.
+Resource files and an Ansible Role whose name matches the input for `--kind`.
 An example of this command is:
 
 ```sh
@@ -35,7 +35,7 @@ table describes a basic rundown of each generated file/directory.
 | File/Folders   | Purpose                           |
 | :---           | :--- |
 | deploy | Contains a generic set of kubernetes manifests for deploying this operator on a kubernetes cluster. |
-| roles/<kind> | Contains an Ansible Role initialized using [Ansible Galaxy](https://docs.ansible.com/ansible/latest/reference_appendices/galaxy.html) |
+| roles/\<kind\> | Contains an Ansible Role initialized using [Ansible Galaxy](https://docs.ansible.com/ansible/latest/reference_appendices/galaxy.html) |
 | build | Contains scripts that the operator-sdk uses for build and initialization. |
 | watches.yaml | Contains Group, Version, Kind, and Ansible invocation method. |
 
