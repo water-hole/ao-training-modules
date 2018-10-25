@@ -1,5 +1,14 @@
 # Ansible Kubernetes Modules
 
+Using Ansible to manage workloads on Kubernetes is easy and natural, even if
+you are new to Ansible.
+
+## Goals
+
+By the end of this module, you will understand:
+* How to create and remove resources in Kubernetes
+* How to reuse an existing Kubernetes manifest file with Ansible
+
 ## Getting started with the k8s Ansible modules
 
 Since we are interested in using Ansible for the lifecycle management of our
