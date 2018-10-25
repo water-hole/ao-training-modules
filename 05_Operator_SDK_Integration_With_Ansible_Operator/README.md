@@ -56,9 +56,9 @@ Once this is done, there are two ways to run the operator:
 - As a pod inside a Kubernetes cluster
 - As a go program outside the cluster using `operator-sdk`
 
-For the sake of this tutorial, we will run the pod as an operator inside of a
+For the sake of this tutorial, we will run the operator as a pod inside of a
 Kubernetes Cluster. If you are interested in learning more about running the
-operator using `operator-sdk` see the section at the bottom of this document.
+operator using `operator-sdk`, see the section at the bottom of this document.
 
 ### Run as a pod inside a Kubernetes cluster
 
