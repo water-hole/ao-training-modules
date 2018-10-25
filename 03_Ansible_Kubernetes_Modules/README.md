@@ -9,6 +9,9 @@ By the end of this module, you will understand:
 * How to create and remove resources in Kubernetes
 * How to reuse an existing Kubernetes manifest file with Ansible
 
+**Note**: This guide assumes [minikube][minikube_tool] has been installed and
+is running a local kubernetes cluster.
+
 ## Getting started with the k8s Ansible modules
 
 Since we are interested in using Ansible for the lifecycle management of our
@@ -45,19 +48,17 @@ state: present
 
 Run the playbook:
 ```bash
-$ ansible-playbook playbook.yaml
- [WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+$ ansible-playbook -i inventory playbook.yaml
 
+PLAY [localhost] **********************************************************
 
-PLAY [localhost] ***************************************************************************
-
-TASK [Gathering Facts] *********************************************************************
+TASK [Gathering Facts] ****************************************************
 ok: [localhost]
 
 Task [example-role : set test namespace to present]
 changed: [localhost]
 
-PLAY RECAP *********************************************************************************
+PLAY RECAP ****************************************************************
 localhost                  : ok=2    changed=1    unreachable=0    failed=0
 ```
 
@@ -73,19 +74,17 @@ test          Active    3s
 
 Rerun the playbook setting `state` to `absent`:
 ```bash
-$ ansible-playbook playbook.yaml --extra-vars state=absent
- [WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+$ ansible-playbook -i inventory playbook.yaml --extra-vars state=absent
 
+PLAY [localhost] **********************************************************
 
-PLAY [localhost] ***************************************************************************
-
-TASK [Gathering Facts] *********************************************************************
+TASK [Gathering Facts] ****************************************************
 ok: [localhost]
 
 Task [example-role : set test namespace to absent]
 changed: [localhost]
 
-PLAY RECAP *********************************************************************************
+PLAY RECAP ****************************************************************
 localhost                  : ok=2    changed=1    unreachable=0    failed=0
 ```
 
@@ -100,16 +99,9 @@ kube-system   Active    28d
 
 ## Leveraging existing Kubernetes Resource Files inside of Ansible
 
-It may be easier to leverage existing Kubernetes Resource files to get started.
-Take the [nginx deployment
+Now, we can leverage existing Kubernetes Resource files. Let us take the [nginx deployment
 example](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#creating-a-deployment)
-available in the Kubernetes docs. Starting with a clean Ansible Role
-`example-role`:
-
-```bash
-$ rm -rf example-role
-$ ansible-galaxy init example-role
-```
+from the Kubernetes docs.
 
 Copy `nginx-deployment.yaml` into `example-role/files`:
 
@@ -138,38 +130,78 @@ spec:
         ports:
         - containerPort: 80
 ```
-Modify `example-role/tasks/main.yml`:
+
+Update `example-role/tasks/main.yml`:
 ```yaml
 ---
-- k8s:
-    state: present
+- name: set test namespace to {{ state }}
+  k8s:
+    api_version: v1
+    kind: Namespace
+    name: test
+    state: "{{ state }}"
+
+- name: set nginx deployment to {{ state }}
+  k8s:
+    state: "{{ state }}"
     definition: "{{ lookup('file', 'nginx-deployment.yaml') }}"
-    namespace: default
+    namespace: test
 ```
 
-Run the playbook and observe 3 nginx replicas created from the above
-deployment.
-
+Run the playbook:
 ```bash
-$ ansible-playbook playbook.yaml
+$ ansible-playbook -i inventory playbook.yaml
 
-PLAY [localhost] **************************************************************************************************************************************************************************************************
+PLAY [localhost] **********************************************************
 
-TASK [Gathering Facts] ********************************************************************************************************************************************************************************************
+TASK [Gathering Facts] ****************************************************
 ok: [localhost]
 
-TASK [example-role : k8s] *****************************************************************************************************************************************************************************************
+TASK [example-role : set test namespace to present] ***********************
 changed: [localhost]
 
-PLAY RECAP ********************************************************************************************************************************************************************************************************
-localhost                  : ok=2    changed=1    unreachable=0    failed=0
+TASK [example-role : set nginx deployment to present] *********************
+changed: [localhost]
 
-$ kubectl get pods
-NAME                                  READY     STATUS              RESTARTS   AGE
-nginx-deployment-d7b764d88-8nvd9      0/1       ContainerCreating   0          13s
-nginx-deployment-d7b764d88-hvd27      0/1       ContainerCreating   0          13s
-nginx-deployment-d7b764d88-n4d7g      0/1       ContainerCreating   0          13s
+PLAY RECAP ****************************************************************
+localhost                  : ok=3    changed=2    unreachable=0    failed=0
 ```
 
+You can see the `test` namespace created and the `nginx` deployment created in the new
+namespace.
+```bash
+$ kubectl get all -n test
+NAME                                    READY     STATUS              RESTARTS   AGE
+pod/nginx-deployment-86d59dd769-7flft   0/1       ContainerCreating   0          7s
+pod/nginx-deployment-86d59dd769-7ptcg   0/1       ContainerCreating   0          7s
+pod/nginx-deployment-86d59dd769-h5qrb   0/1       ContainerCreating   0          7s
+
+NAME                               DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/nginx-deployment   3         3         3            0           7s
+
+NAME                                          DESIRED   CURRENT   READY     AGE
+replicaset.apps/nginx-deployment-86d59dd769   3         3         0         7s
+```
+
+And just like before we can take it all down by simply running our playbook with `state=absent`:
+```bash
+$ ansible-playbook -i inventory playbook.yaml -e state=absent
+
+PLAY [localhost] **********************************************************
+
+TASK [Gathering Facts] ****************************************************
+ok: [localhost]
+
+TASK [example-role : set test namespace to absent] ************************
+changed: [localhost]
+
+TASK [example-role : set nginx deployment to absent] **********************
+changed: [localhost]
+
+PLAY RECAP ****************************************************************
+localhost                  : ok=3    changed=2    unreachable=0    failed=0
+```
+
+[minikube_tool]:https://github.com/kubernetes/minikube#installation
 [k8s_ansible_module]:https://docs.ansible.com/ansible/2.6/modules/k8s_module.html
 [openshift_restclient_python]:https://github.com/openshift/openshift-restclient-python

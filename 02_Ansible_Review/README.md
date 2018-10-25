@@ -10,21 +10,26 @@ By the end of this section, you will understand:
 
 ## First Commands
 
-Edit (or create) `/etc/ansible/hosts` and put one or more systems in it. Use `localhost` as a starting point:
-```
+Create an ansible inventory file. We will use `localhost` as a starting point:
+```bash
+$ cat <<EOF > inventory
+[local]
 localhost ansible_connection=local
+EOF
 ```
 
 If you installed ansible into a python virtual environment, include the path to
 the python interpreter in your hosts entry:
-
-```
+```bash
+$ cat <<EOF > inventory
+[local]
 localhost ansible_connection=local ansible_python_interpreter=/home/<username>/operatordev/<project>/bin/python
+EOF
 ```
 
 Now test that Ansible is properly configured:
 ```bash
-$ ansible all -m ping
+$ ansible -i inventory all -m ping
 localhost | SUCCESS => {
     "changed": false,
     "ping": "pong"
@@ -47,7 +52,7 @@ For simplicity, let's start with declaring the tasks directly in the playbook. S
 
 Run the playbook:
 ```bash
-$ ansible-playbook playbook.yaml
+$ ansible-playbook -i inventory playbook.yaml
 ---- (omitted output) ----
 TASK [debug] ****************************
 ok: [localhost] => {
@@ -88,15 +93,15 @@ Since `example-role` exists as a directory in the same path as `playbook.yaml`, 
 
 Run the playbook:
 ```bash
-$ ansible-playbook playbook.yaml
+$ ansible-playbook -i inventory playbook.yaml
 ---- (omitted output) ----
-TASK [debug] ****************************
+TASK [example-role : debug] *************
 ok: [localhost] => {
     "msg": "System localhost has uuid NA"
 }
 ```
 
-You should observe that the output remains the same.
+You should observe that our `example-role` is referenced in our debug task.
 
 ## Using variables inside of Ansible Roles
 
@@ -120,13 +125,14 @@ Now modify `example-role/tasks/main.yml` to print out our message using a `debug
 
 Run the playbook:
 ```bash
-$ ansible-playbook playbook.yaml
+$ ansible-playbook -i inventory playbook.yaml
 ---- (omitted output) ----
-TASK [debug] ****************************
+TASK [example-role : debug] *************
 ok: [localhost] => {
     "msg": "System localhost has uuid NA"
 }
 
+TASK [example-role : debug] *************
 ok: [localhost] => {
     "msg": "The spice must flow"
 }
@@ -134,13 +140,14 @@ ok: [localhost] => {
 
 We can overwrite the default message by passing along `message` as an extra var when launching the playbook:
 ```bash
-$ ansible-playbook playbook.yaml -e 'message="This is an altered message"'
+$ ansible-playbook -i inventory playbook.yaml -e 'message="This is an altered message"'
 ---- (omitted output) ----
-TASK [debug] ****************************
+TASK [example-role : debug] *************
 ok: [localhost] => {
     "msg": "System localhost has uuid NA"
 }
 
+TASK [example-role : debug] *************
 ok: [localhost] => {
     "msg": "This is an altered message"
 }

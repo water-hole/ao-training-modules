@@ -24,6 +24,7 @@ $ sudo dnf install ansible python2-openshift
 It is beneficial to install the dependencies in a virtual environment to avoid
 installing unneeded files on your local machine. To do this, ensure you have
 `virtualenv` installed and run:
+
 ```
 $ mkdir -p ~/operatordev/<project>
 $ virtualenv ~/operatordev/<project>
@@ -54,3 +55,11 @@ $ make install
 ```
 
 This installs the CLI binary `operator-sdk` at `$GOPATH/bin`.
+
+## Start Minikube
+
+See [Minikube's quickstart](https://kubernetes.io/docs/setup/minikube/#quickstart).
+
+```bash
+$ minikube start
+```
