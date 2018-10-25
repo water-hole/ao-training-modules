@@ -15,6 +15,13 @@ Edit (or create) `/etc/ansible/hosts` and put one or more systems in it. Use `lo
 localhost ansible_connection=local
 ```
 
+If you installed ansible into a python virtual environment, include the path to
+the python interpreter in your hosts entry:
+
+```
+localhost ansible_connection=local ansible_python_interpreter=/home/<username>/operatordev/<project>/bin/python
+```
+
 Now test that Ansible is properly configured:
 ```bash
 $ ansible all -m ping
