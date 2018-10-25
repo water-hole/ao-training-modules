@@ -79,7 +79,7 @@ $ operator-sdk build memcached-operator:v0.0.1
 
 Kubernetes deployment manifests are generated in `deploy/operator.yaml`. The
 deployment image in this file needs to be modified from the placeholder
-`REPLACE_IMAGE` to the previous built image. We also want to modify the default
+`REPLACE_IMAGE` to the previously-built image. We also want to modify the default
 ImagePullPolicy from `Always` to `Never` since we are not pushing our image to
 a registry. To do this run:
 ```
