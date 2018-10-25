@@ -98,7 +98,7 @@ available in the Kubernetes docs. Starting with a clean Ansible Role
 `example-role`:
 
 ```bash
-$ rm -Rf example-role
+$ rm -rf example-role
 $ ansible-galaxy init example-role
 ```
 
