@@ -101,7 +101,7 @@ unexpected errors from Ansible Runner when a Custom Resource is created.
 It is also important that the `role` path referenced in `watches.yaml` exists
 on your machine. Since we are normally used to using a container where the Role
 is put on disk for us, we need to manually copy our role to the configured
-Ansible Roles path (e.g `/etc/ansible/roles`.
+Ansible Roles path (e.g `/etc/ansible/roles`).
 
 Run the operator locally with the default kubernetes config file present at
 `$HOME/.kube/config`:
