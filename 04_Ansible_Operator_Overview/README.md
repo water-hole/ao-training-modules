@@ -26,7 +26,7 @@ Dockerfile example:
 COPY watches.yaml /opt/ansible/watches.yaml
 ```
 
-The Watches file format is yaml and is an array of objects. The object has
+The Watches file is written in YaML and contains an array of objects. The object has
 mandatory fields:
 
 **version**:  The version of the Custom Resource that you will be watching.
@@ -61,7 +61,7 @@ Example specifying a playbook:
 - version: v1alpha1
   group: foo.example.com
   kind: Foo
-  role: /opt/ansible/playbook.yml
+  playbook: /opt/ansible/playbook.yaml
 ```
 
 
@@ -79,10 +79,10 @@ instead of the role:
 - version: v1alpha1
   group: foo.example.com
   kind: Foo
-  playbook: /opt/ansible/playbook.yml
+  playbook: /opt/ansible/playbook.yaml
 ```
 
-Modify `tmp/build/Dockerfile` to put `playbook.yml` in `/opt/ansible` in the
+Modify `tmp/build/Dockerfile` to put `playbook.yaml` in `/opt/ansible` in the
 container in addition to the role (`/opt/ansible` is the `HOME` environment
 variable inside of the Ansible Operator base image):
 ```Dockerfile
@@ -101,7 +101,7 @@ $ operator-sdk new --type ansible --kind Foo --api-version foo.example.com/v1alp
 
 ## Custom Resource file
 
-The Custom Resource file format is Kubernetes resource file. The object has
+The Custom Resource file format is a Kubernetes resource file. The object has
 mandatory fields:
 
 **apiVersion**:  The version of the Custom Resource that will be created.
