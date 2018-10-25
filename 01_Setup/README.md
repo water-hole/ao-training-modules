@@ -27,7 +27,7 @@ installing unneeded files on your local machine. To do this, ensure you have
 ```
 $ mkdir -p ~/operatordev/<project>
 $ virtualenv ~/operatordev/<project>
-$ source ~/operatordev/foo/bin/activate
+$ source ~/operatordev/<project>/bin/activate
 $ pip install openshift ansible
 ```
 
