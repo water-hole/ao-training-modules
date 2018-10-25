@@ -36,7 +36,7 @@ Optional dependencies used for running an Operator on your local machine:
 $ pip install ansible-runner ansible-runner-http
 ```
 
-## Install the Operator SDK CLI - PLACEHOLDER UNTIL WE HAVE SDK RELEASE
+## Install the Operator SDK CLI
 
 The Operator SDK has a CLI tool that helps you create, build, and deploy a new
 operator project.
