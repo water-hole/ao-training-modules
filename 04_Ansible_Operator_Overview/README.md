@@ -1,9 +1,18 @@
 # Ansible Operator Overview
+This section is not a training exercise, but instead a brief overview of
+Ansible Operator. If you are interested in a step-by-step example of developing
+an Ansible Operator using Operator SDK, see [Section 5][section_5_link].
 
 The reader is expected to have a basic understanding of the Operator pattern.
 Ansible Operator is an Operator which is powered by Ansible. Custom resource
 events trigger Ansible tasks as opposed to the traditional approach of handling
 these events with Go code.
+
+## Goals
+By the end of this section the reader should have a basic understanding of:
+* What the Ansible Operator is
+* How the Ansible Operator maps Custom Resource events to Ansible code
+* How to pass extra variables to Ansible code via the operator
 
 ## Using Ansible inside of an Operator
 
@@ -174,6 +183,6 @@ The structure is:
 
 **Note:** The resulting JSON structure that is passed in as extra vars are autoconverted to snake-case. `newParameter` becomes `new_parameter`.
 
-[ansible_operator_user_guide]:../user-guide.md
+[section_5_link]:../05_Operator_SDK_Integration_With_Ansible_Operator/README.md
 [time_pkg]:https://golang.org/pkg/time/
 [time_parse_duration]:https://golang.org/pkg/time/#ParseDuration
