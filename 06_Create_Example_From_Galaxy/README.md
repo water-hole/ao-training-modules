@@ -87,22 +87,22 @@ resource is modified.
 
 ### Define the Memcached spec
 
-Defining the spec for an Ansible Operator can be done entirely in Ansible. The
-Ansible Operator will simply pass all key value pairs listed in the Custom
-Resource spec field along to Ansible as
+Users provide input to an operator by placing descriptive data in the `spec`
+field of a Custom Resource. In the case of an Ansible Operator, any key value
+pairs listed in the Custom Resource `spec` field will be passed into Ansible as
 [variables](https://docs.ansible.com/ansible/2.5/user_guide/playbooks_variables.html#passing-variables-on-the-command-line).
 It is recommended that you perform some type validation in Ansible on the
 variables to ensure that your application is receiving expected input.
 
-First, set a default in case the user doesn't set the `spec` field by modifying
-`roles/Memcached/defaults/main.yml`:
+Set a default size for Memcached, in case the user doesn't provide it in the
+`spec` field, by modifying `roles/Memcached/defaults/main.yml`:
 ```yaml
 size: 1
 ```
 
 ### Defining the Memcached deployment
 
-Now that we have the spec defined, we can define what Ansible is actually
+Now that we have the spec defined, we can define which Ansible tasks are
 executed on resource changes. Since this is an Ansible Role, the default
 behavior will be to execute the tasks in `roles/Memcached/tasks/main.yml`. We
 want Ansible to create a deployment if it does not exist which runs the
@@ -122,7 +122,7 @@ Modify `roles/Memcached/tasks/main.yml` to look like the following:
         name: '{{ meta.name }}-memcached'
         namespace: '{{ meta.namespace }}'
       spec:
-        replicas: "{{size}}"
+        replicas: "{{ size }}"
         selector:
           matchLabels:
             app: memcached
