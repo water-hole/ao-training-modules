@@ -56,21 +56,32 @@ Once this is done, there are two ways to run the operator:
 - As a pod inside a Kubernetes cluster
 - As a go program outside the cluster using `operator-sdk`
 
-### 1. Run as a pod inside a Kubernetes cluster
+For the sake of this tutorial, we will run the pod as an operator inside of a
+Kubernetes Cluster. If you are interested in learning more about running the
+operator using `operator-sdk` see the section at the bottom of this document.
+
+### Run as a pod inside a Kubernetes cluster
 
 Running as a pod inside a Kubernetes cluster is preferred for production use.
 
-Build the memcached-operator image and push it to a registry:
+It is recommended to take advantage of `minikube docker-env` so that you can
+build Docker images directly inside of the VM. This way the images can be
+referenced from within the Kubernetes cluster without the need to push images
+to a registry. To do this, run:
+```bash
+$ eval $(minikube docker-env)
 ```
-$ operator-sdk build quay.io/example/memcached-operator:v0.0.1
-$ docker push quay.io/example/memcached-operator:v0.0.1
+
+Build the memcached-operator image:
+```
+$ operator-sdk build memcached-operator:v0.0.1
 ```
 
 Kubernetes deployment manifests are generated in `deploy/operator.yaml`. The
 deployment image in this file needs to be modified from the placeholder
 `REPLACE_IMAGE` to the previous built image. To do this run:
 ```
-$ sed -i 's|REPLACE_IMAGE|quay.io/example/memcached-operator:v0.0.1|g' deploy/operator.yaml
+$ sed -i 's|REPLACE_IMAGE|memcached-operator:v0.0.1|g' deploy/operator.yaml
 ```
 
 Deploy the memcached-operator:
@@ -90,9 +101,10 @@ NAME                     DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
 memcached-operator       1         1         1            1           1m
 ```
 
-### 2. Run outside the cluster
+## Optional: Run operator outside the cluster
 
-This method is preferred during the development cycle to speed up deployment and testing.
+This method is preferred during the development cycle to speed up deployment
+and testing.
 
 **Note**: Ensure that [Ansible Runner][ansible_runner_tool] and [Ansible Runner
 HTTP Plugin][ansible_runner_http_plugin] is installed or else you will see
