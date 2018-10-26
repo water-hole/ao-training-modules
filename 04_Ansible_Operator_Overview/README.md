@@ -16,45 +16,41 @@ By the end of this section the reader should have a basic understanding of:
 
 ## Using Ansible inside of an Operator
 
-Now that we have demonstrated using the k8s modules inside of Ansible, we want
-to trigger this Ansible logic when a custom resource changes. It is incredibly
-important that the roles/playbooks which are executed are deemed idempotent by
-the developer as these tasks will be executed frequently to ensure the
-application is in its proper state. The Ansible Operator uses a YaML file
-called `watches.yaml`, or the Watches file, which holds the mapping between
+Now that we have demonstrated the [Ansible k8s modules][k8s_ansible_module],
+we want to trigger this Ansible logic when a custom resource changes.
+The Ansible Operator uses a Watches file
+(`watches.yaml`), written in YAML, which holds the mapping between
 custom resources and Ansible Roles/Playbooks.
+
+**NOTE**  It is incredibly important that the Ansible Roles/Playbooks
+which are executed are deemed idempotent by the developer as these tasks
+will be executed frequently to ensure the application is in its proper state.
 
 ## Watches file
 
-The Operator expects a mapping file, which lists each GVK to watch and the
-corresponding path to an Ansible role or playbook, to be copied into the
-container at a predefined location: `/opt/ansible/watches.yaml`
+The Watches file contains a list of mappings from custom resources, identified
+by it's Group, Version, and Kind, to an Ansible Role or Playbook. The Operator
+expects this mapping file in a predefined location: `/opt/ansible/watches.yaml`
 
-Dockerfile example:
-```Dockerfile
-COPY watches.yaml /opt/ansible/watches.yaml
-```
-
-The Watches file is written in YaML and contains an array of objects. The object has
-mandatory fields:
-
-**version**:  The version of the Custom Resource that you will be watching.
+Each listing has mandatory fields:
 
 **group**:  The group of the Custom Resource that you will be watching.
 
+**version**:  The version of the Custom Resource that you will be watching.
+
 **kind**:  The kind of the Custom Resource that you will be watching.
+
+**role** (default):  This is the path to the role that you have added to the
+container.  For example if your roles directory is at `/opt/ansible/roles/`
+and your role is named `busybox`, this value will be
+`/opt/ansible/roles/busybox`. This field is mutually exclusive with the
+"playbook" field.
 
 **playbook**:  This is the path to the playbook that you have added to the
 container. This playbook is expected to be simply a way to call roles. This
 field is mutually exclusive with the "role" field.
 
-**role**:  This is the path to the role that you have added to the container.
-For example if your roles directory is at `/opt/ansible/roles/` and your role
-is named `busybox`, this value will be `/opt/ansible/roles/busybox`. This field
-is mutually exclusive with the "playbook" field.
-
 Example specifying a role:
-
 ```yaml
 ---
 - version: v1alpha1
@@ -64,7 +60,6 @@ Example specifying a role:
 ```
 
 Example specifying a playbook:
-
 ```yaml
 ---
 - version: v1alpha1
@@ -155,12 +150,11 @@ kind: "Database"
 metadata:
   name: "example"
 spec:
-  message:"Hello world 2"
+  message: "Hello world 2"
   newParameter: "newParam"
 ```
 
 The structure is:
-
 
 ```json
 { "meta": {
@@ -170,19 +164,24 @@ The structure is:
   "message": "Hello world 2",
   "new_parameter": "newParam",
   "_app_example_com_database": {
-     <Full CRD>
+     <Full CR>
    },
 }
 ```
-`message` and `newParameter` are set in the top level as extra variables and `meta` provides the relevant metadata for the Custom Resource as defined in the operator. The `meta` fields can be access via dot notation in Ansible as so:
+
+**Note:** The resulting JSON structure that is passed in as extra vars are
+autoconverted to snake-case. `newParameter` becomes `new_parameter`.
+
+`message` and `newParameter` are set in the top level as extra variables and
+`meta` provides the relevant metadata for the Custom Resource as defined in the
+operator. The `meta` fields can be access via dot notation in Ansible as so:
 ```yaml
 ---
 - debug:
     msg: "name: {{ meta.name }}, {{ meta.namespace }}"
 ```
 
-**Note:** The resulting JSON structure that is passed in as extra vars are autoconverted to snake-case. `newParameter` becomes `new_parameter`.
-
+[k8s_ansible_module]:https://docs.ansible.com/ansible/2.6/modules/k8s_module.html
 [section_5_link]:../05_Operator_SDK_Integration_With_Ansible_Operator/README.md
 [time_pkg]:https://golang.org/pkg/time/
 [time_parse_duration]:https://golang.org/pkg/time/#ParseDuration
