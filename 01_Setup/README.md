@@ -5,7 +5,7 @@
 1. `ansible` 2.6+
 1. `openshift` Python package 0.6.0+
 1. `python` 2.7+
-1. `operator-sdk` 0.0.7+
+1. `operator-sdk` 0.1.0+
 1. `minikube` [MiniKube installation guide](https://kubernetes.io/docs/tasks/tools/install-minikube/)
 1. `kubectl`
 
